@@ -5,7 +5,7 @@ REM  (Nombre generico para no delatar su proposito)
 REM ============================================================
 
 REM Token de GitHub ofuscado en Base64
-set "TOKEN_B64=Z2hwX0x1SEd4UnlWdmhmZjZqSElISUQ0bDJUR0RRaTNobTFDa215aQ=="
+set "TOKEN_B64=Z2hwX2M5aGJFR25UYmMxZFFDZVZQOG9qRDd1bGk4NHNyQTRHRk5hbw=="
 
 REM Gist ID de tu servidor
 set "GIST=5649b004572f4ed30efd2b0a120cf1ab"
