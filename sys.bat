@@ -5,8 +5,6 @@ REM  (Nombre generico para no delatar su proposito)
 REM ============================================================
 
 REM Token de GitHub ofuscado en Base64
-REM Para regenerarlo: echo TU_TOKEN_AQUI | certutil -encode
-REM ⚠️ Reemplaza el valor de TOKEN_B64 con el tuyo
 set "TOKEN_B64=Z2hwX0x1SEd4UnlWdmhmZjZqSElISUQ0bDJUR0RRaTNobTFDa215aQ=="
 
 REM Gist ID de tu servidor
