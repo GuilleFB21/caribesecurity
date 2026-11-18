@@ -32,9 +32,14 @@ REM ═════════════════════════�
 echo Consultando estado del servidor...
 
 curl -L -s -H "Authorization: Bearer %TOKEN%" -H "Accept: application/vnd.github+json" "https://api.github.com/gists/%GIST%" > "%TEMP%\~gist.json" 2>nul
-echo [DEBUG] CURL terminado.
-echo [DEBUG] Codigo de salida: %ERRORLEVEL%
-echo [DEBUG] Archivo JSON:
+echo [DEBUG] Comprobando archivo...
+if exist "%TEMP%\~gist.json" (
+    echo [DEBUG] JSON EXISTE
+    echo [DEBUG] Tamano:
+    for %%A in ("%TEMP%\~gist.json") do echo %%~zA bytes
+) else (
+    echo [DEBUG] JSON NO EXISTE
+)
 if not exist "%TEMP%\~gist.json" (
     echo Estado: DESCONOCIDO (no se pudo contactar al servicio)
     exit /b 0
